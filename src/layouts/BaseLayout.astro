@@ -51,8 +51,8 @@ const {
       backgroundImage && (
         <div class='pointer-events-none fixed inset-0 z-[-1]'>
           <div
-            class='absolute inset-0 bg-cover bg-center opacity-10 dark:opacity-5 blur-sm grayscale'
-            style={`background-image: url('${backgroundImage}'); mask-image: linear-gradient(to bottom, black 50%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);`}
+            class='absolute inset-0 bg-cover bg-center opacity-[0.15] dark:opacity-10 blur-[2px] mix-blend-luminosity dark:mix-blend-overlay'
+            style={`background-image: url('${backgroundImage}'); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 90%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 90%);`}
           />
         </div>
       )
@@ -61,7 +61,7 @@ const {
       highlightColor && (
         <div
           id='highlight-gradient'
-          class='pointer-events-none absolute start-0 top-0 z-0 h-screen w-full opacity-25'
+          class='pointer-events-none absolute start-0 top-0 z-0 h-screen w-full opacity-20 transition-colors duration-500'
           style={`background-image:linear-gradient(${highlightColor},transparent)`}
         />
       )

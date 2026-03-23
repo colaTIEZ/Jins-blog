@@ -470,13 +470,13 @@
     justify-content: center;
     color: #1a1a1a;
     border-radius: 50%;
-    transition: background 0.2s ease, transform 0.1s ease, color 0.2s ease;
+    transition: background 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
   }
   .ctrl-btn:hover {
     background: rgba(0,0,0,0.06);
   }
   .ctrl-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.85);
   }
 
   :global(.dark) .ctrl-btn, :global([data-theme="dark"]) .ctrl-btn { color: #d1d5db; }
@@ -505,10 +505,10 @@
     justify-content: center;
     color: #1a1a1a;
     background: rgba(0,0,0,0.04);
-    transition: background 0.2s ease, transform 0.1s ease;
+    transition: background 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
   }
-  .play-pause-btn:hover { background: rgba(0,0,0,0.08); }
-  .play-pause-btn:active { transform: scale(0.9); }
+  .play-pause-btn:hover { background: rgba(0,0,0,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .play-pause-btn:active { transform: scale(0.85); }
   
   :global(.dark) .play-pause-btn, :global([data-theme="dark"]) .play-pause-btn {
     color: #f3f4f6;
