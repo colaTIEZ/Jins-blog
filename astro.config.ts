@@ -25,7 +25,7 @@ import config from './src/site.config.ts'
 // https://astro.build/config
 export default defineConfig({
   // [Basic]
-  site: 'https://jins-blog-private.pages.dev/',
+  site: 'https://jins-blog-private.pages.dev',
   
   trailingSlash: 'never',
   // root: './my-project-directory',
