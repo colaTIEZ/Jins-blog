@@ -30,7 +30,10 @@ node_modules/
 
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
+.dev.vars   
+
 
 ### Custom ###
 .DS_Store
