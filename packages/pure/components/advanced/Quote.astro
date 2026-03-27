@@ -32,8 +32,15 @@ const { class: className } = Astro.props
       // Because virtual:config can only be accessed using json string, function cannot work, so we need to use new Function
       const targetFunction = new Function('data', `return (${quote.target})(data)`)
       fetch(quote.server)
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) throw new Error('Network response was not ok')
+          return response.json()
+        })
         .then((data) => this.render(targetFunction(data)))
+        .catch((error) => {
+          console.warn('[Quote Component] Failed to fetch quote:', error)
+          this.render('灵感采集失败，请稍后刷新重试 ✨')
+        })
     }
   }
   customElements.define('quote-component', Quote)

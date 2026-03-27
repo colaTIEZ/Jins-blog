@@ -3,6 +3,7 @@ import { Footer, Header, ThemeProvider } from 'astro-pure/components/basic'
 import type { SiteMeta } from 'astro-pure/types'
 import BaseHead from '@/components/BaseHead.astro'
 import Player from '@/components/Player.astro'
+import CozeChat from '../components/CozeChat.astro';
 import config from '@/site-config'
 
 // Import the global.css file here so that it is included on
@@ -78,6 +79,7 @@ const {
     </div>
 
     <Player playlist={myCustomPlaylist} />
+    <CozeChat />
 
     {/* Set highlight color */}
     <style define:vars={{ highlightColor }}>
@@ -118,37 +120,7 @@ const {
         }
       }
     </style>
-    <script
-      is:inline
-      src='https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js'
-    ></script>
-    <script is:inline>
-      // 确保整个页面和外部 SDK 都加载完毕后再执行
-      window.addEventListener('load', function () {
-        if (typeof CozeWebSDK !== 'undefined') {
-          new CozeWebSDK.WebChatClient({
-            config: {
-              bot_id: '7621250310581010441'
-            },
-            componentProps: {
-              title: 'Coze AI 助手'
-            },
-            auth: {
-              type: 'token',
-              token: 'proxy-dummy-token',
-              onRefreshToken: function () {
-                return 'proxy-dummy-token'
-              }
-            },
-            setting: {
-              // 关键配置：将 SDK 的请求基础路径重定向到我们的代理 API
-              apiBaseUrl: '/api/coze'
-            }
-          })
-        } else {
-          console.error('Coze Web SDK 加载失败了，请检查网络或 CDN 链接。')
-        }
-      })
-    </script>
+   
+    
   </body>
 </html>
