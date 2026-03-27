@@ -21,27 +21,32 @@ const {
     aria-label="打开 AI 助手"
     title="点击与 AI 助手交互"
   >
-    <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-    </svg>
-    <span class="pulse"></span>
+    <!-- 动态粒子与能量核心风按钮 -->
+    <div class="particle-sphere"></div>
+    <div class="particle-ring"></div>
+    <div class="inner-core">
+      <svg class="chat-icon-beam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </div>
+    <span class="pulse-energy"></span>
   </button>
 
-  <!-- 聊天窗口容器 (iframe 方式) -->
+  <!-- 聊天窗口容器 (简约毛玻璃方式) -->
   <div id="coze-chat-container" class="coze-chat-modal hidden">
     <div class="coze-chat-header">
-      <h2>AI 助手</h2>
+      <h2 class="glass-title">AI 助手</h2>
       <button 
         id="coze-chat-close"
         class="close-button"
         aria-label="关闭聊天"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="close-icon">
+          <path d="M18 6L6 18M6 6l12 12"></path>
         </svg>
       </button>
     </div>
+    
     <!-- iframe 会由 JS 动态创建 -->
     <div id="coze-embed-container" class="coze-chat-body"></div>
   </div>
@@ -58,25 +63,95 @@ const {
     z-index: 40;
   }
 
-  /* 聊天按钮 */
+  /* 聊天按钮：动态粒子与能量核心风 */
   .coze-chat-button {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
-    color: white;
+    background: transparent;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: auto;
     z-index: 41;
+    perspective: 500px;
+  }
+
+  /* 粒子球体 */
+  .particle-sphere {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(64, 156, 255, 0.8), rgba(138, 43, 226, 0.9));
+    box-shadow: 0 0 20px rgba(64, 156, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.4);
+    animation: sphere-spin 8s linear infinite;
+    z-index: 1;
+  }
+
+  /* 类似土星环的粒子环 */
+  .particle-ring {
+    position: absolute;
+    width: 140%;
+    height: 140%;
+    border-radius: 50%;
+    border: 2px dashed rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(138, 43, 226, 0.3);
+    animation: ring-spin 4s linear infinite;
+    transform: rotateX(60deg) rotateY(20deg);
+    z-index: 2;
+  }
+
+  /* 内部核心光束 */
+  .inner-core {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .chat-icon-beam {
+    width: 32px;
+    height: 32px;
+    color: #fff;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+    pointer-events: none;
+    animation: float-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes sphere-spin {
+    0% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg); }
+    50% { transform: rotate(180deg) scale(0.95); filter: hue-rotate(45deg); }
+    100% { transform: rotate(360deg) scale(1); filter: hue-rotate(0deg); }
+  }
+
+  @keyframes ring-spin {
+    0% { transform: rotateX(60deg) rotateY(20deg) rotateZ(0deg); }
+    100% { transform: rotateX(60deg) rotateY(20deg) rotateZ(360deg); }
+  }
+
+  @keyframes float-pulse {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-2px) scale(1.05); }
+  }
+
+  /* 点击爆发感交互 */
+  .coze-chat-button.bursting .particle-sphere {
+    animation: sphere-burst 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  }
+
+  @keyframes sphere-burst {
+    0% { transform: scale(1); opacity: 1; }
+    40% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
   }
 
   /* 当 BackToTop 按钮存在时，调整 AI 按钮位置以避免重叠 */
@@ -92,46 +167,39 @@ const {
   }
 
   .coze-chat-button:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px) scale(1.05);
+  }
+  
+  .coze-chat-button:hover .particle-sphere {
+    box-shadow: 0 0 30px rgba(64, 156, 255, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.6);
   }
 
   .coze-chat-button:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
   }
 
-  .chat-icon {
-    width: 28px;
-    height: 28px;
-    pointer-events: none;
-  }
-
-  /* 呼吸动画 */
-  .pulse {
+  /* 呼吸能量波 */
+  .pulse-energy {
     position: absolute;
-    width: 56px;
-    height: 56px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    border: 2px solid hsl(var(--primary));
-    animation: pulse-animation 2s infinite;
+    border: 2px solid rgba(0, 255, 255, 0.8);
+    animation: energy-pulse 2s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+    z-index: 0;
   }
 
-  @keyframes pulse-animation {
-    0% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.2);
-      opacity: 0;
-    }
+  @keyframes energy-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.8); opacity: 0; border-color: rgba(138, 43, 226, 0); }
   }
 
   /* 聊天窗口背景遮罩 */
   .coze-chat-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
     z-index: 39;
     pointer-events: auto;
     transition: opacity 0.3s ease;
@@ -139,47 +207,50 @@ const {
 
   .coze-chat-backdrop.hidden {
     display: none;
+    opacity: 0;
   }
 
-  /* 聊天窗口模态框 */
+  /* 极简聊天模态框（高质感毛玻璃） */
   .coze-chat-modal {
     position: fixed;
     bottom: 100px;
     right: 24px;
     width: 90vw;
-    max-width: 420px;
+    max-width: 400px;
     height: 600px;
     max-height: 80vh;
-    border-radius: 12px;
-    background: hsl(var(--background));
-    border: 1px solid hsl(var(--foreground) / 0.1);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     z-index: 40;
     pointer-events: auto;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     overflow: hidden;
+  }
+  
+  /* 发消息时的微交互 */
+  .coze-chat-modal.breathing {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.05);
   }
 
   .coze-chat-modal.hidden {
     display: none;
     pointer-events: none;
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
   }
 
   .coze-chat-modal.show {
-    animation: slideUp 0.3s ease;
+    animation: popIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   }
 
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @keyframes popIn {
+    0% { opacity: 0; transform: translateY(20px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   /* 聊天窗口头部 */
@@ -187,40 +258,45 @@ const {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
-    border-bottom: 1px solid hsl(var(--foreground) / 0.1);
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, transparent 100%);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent;
+    z-index: 10;
   }
 
-  .coze-chat-header h2 {
+  /* 简约标题文本 */
+  .glass-title {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: hsl(var(--foreground));
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.5px;
   }
 
-  /* 关闭按钮 */
+  /* 简约关闭按钮 */
   .close-button {
     width: 32px;
     height: 32px;
     border: none;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
     cursor: pointer;
-    color: hsl(var(--foreground));
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.7);
   }
 
   .close-button:hover {
-    background: hsl(var(--foreground) / 0.1);
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 1);
+    transform: rotate(90deg);
   }
 
-  .close-button svg {
-    width: 20px;
-    height: 20px;
+  .close-icon {
+    width: 18px;
+    height: 18px;
   }
 
   /* 聊天内容区 */
@@ -230,14 +306,14 @@ const {
     padding: 0;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
   }
 
-  /* Coze SDK 容器 - iframe 需要明确的尺寸和无边距 */
+  /* iframe 本身使其透明以露出底层效果 */
   #coze-embed-container {
     width: 100%;
     height: 100%;
-    flex: 1;
-    overflow: hidden;
   }
 
   #coze-embed-container iframe {
@@ -245,6 +321,8 @@ const {
     height: 100%;
     border: none;
     display: block;
+    background: transparent;
+    color-scheme: dark;
   }
 
   /* 移动设备适配 */
@@ -252,8 +330,8 @@ const {
     .coze-chat-button {
       bottom: 16px;
       right: 16px;
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
     }
 
     /* 移动端有 BackToTop 时的位置调整 */
@@ -261,33 +339,20 @@ const {
       right: 72px;
     }
 
-    .chat-icon {
-      width: 24px;
-      height: 24px;
+    .ai-core-container {
+      width: 80px;
+      height: 80px;
     }
 
-    .pulse {
-      width: 48px;
-      height: 48px;
-    }
-
-    .coze-chat-modal {
-      bottom: 80px;
-      right: 16px;
-      left: 16px;
-      width: auto;
-      max-width: none;
-      height: 500px;
+    .ai-core {
+      width: 30px;
+      height: 30px;
     }
   }
 
-  /* 深色模式支持 */
-  :global(.dark) .coze-chat-button {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.7) 100%);
-  }
-
+  /* 深色模式支持 (本身已经是深色粒子风格，不需要强制调整) */
   :global(.dark) .coze-chat-backdrop {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
   }
 </style>
 
@@ -493,11 +558,17 @@ const {
     open() {
       if (this.isOpen) return;
       
-      this.isOpen = true;
-      this.modal?.classList.remove('hidden');
-      this.modal?.classList.add('show');
-      this.backdrop?.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+      // 触发爆发动画
+      this.toggleBtn?.classList.add('bursting');
+      
+      setTimeout(() => {
+        this.toggleBtn?.classList.remove('bursting');
+        this.isOpen = true;
+        this.modal?.classList.remove('hidden');
+        this.modal?.classList.add('show');
+        this.backdrop?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }, 300); // 配合 CSS 动画时长
     }
 
     /**
@@ -507,6 +578,7 @@ const {
       if (!this.isOpen) return;
       
       this.isOpen = false;
+      this.modal?.classList.remove('show'); // 移除显示动画以防冲突
       this.modal?.classList.add('hidden');
       this.backdrop?.classList.add('hidden');
       document.body.style.overflow = '';
@@ -532,16 +604,37 @@ const {
           height: 100%;
           text-align: center;
           padding: 20px;
-          color: hsl(var(--foreground) / 0.6);
+          color: rgba(255, 255, 255, 0.8);
           font-size: 14px;
         ">
           <div>
-            <p style="margin: 0;">⚠️ ${message}</p>
+            <p style="margin: 0; color: #ff3366; text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);">⚠️ ${message}</p>
           </div>
         </div>
       `;
     }
   }
+
+  // 接收 Coze Web SDK 传来的自定义消息，以触发“输入中”或“发消息”的UI交互
+  window.addEventListener('message', (e) => {
+    // 根据具体实现调整（这里尝试捕获iframe内输入或发送的可能事件，如果没有也不影响主要视觉体验）
+    const modal = document.getElementById('coze-chat-container');
+    if (!modal) return;
+    
+    // 假设传递了 { type: 'chat_typing' } 或者 { type: 'chat_sent' }
+    if (e.data && e.data.type === 'chat_typing') {
+      modal.classList.add('typing');
+      clearTimeout(window._typingTimeout);
+      window._typingTimeout = setTimeout(() => {
+        modal.classList.remove('typing');
+      }, 1500);
+    } else if (e.data && e.data.type === 'chat_sent') {
+      modal.classList.add('breathing');
+      setTimeout(() => {
+        modal.classList.remove('breathing');
+      }, 1000);
+    }
+  });
 
   // 全局实例引用
   let chatWidget = null;
