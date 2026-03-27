@@ -8,7 +8,7 @@ interface Props {
 }
 
 const {
-  projectId = import.meta.env.PUBLIC_COZE_PROJECT_ID || import.meta.env.PUBLIC_COZE_BOT_ID || '',
+  projectId = import.meta.env.PUBLIC_COZE_PROJECT_ID || '',
   className = ''
 } = Astro.props;
 ---
@@ -27,7 +27,7 @@ const {
     <span class="pulse"></span>
   </button>
 
-  <!-- 聊天窗口容器 -->
+  <!-- 聊天窗口容器 (iframe 方式) -->
   <div id="coze-chat-container" class="coze-chat-modal hidden">
     <div class="coze-chat-header">
       <h2>AI 助手</h2>
@@ -42,6 +42,7 @@ const {
         </svg>
       </button>
     </div>
+    <!-- iframe 会由 JS 动态创建 -->
     <div id="coze-embed-container" class="coze-chat-body"></div>
   </div>
 
@@ -76,6 +77,18 @@ const {
     transition: all 0.3s ease;
     pointer-events: auto;
     z-index: 41;
+  }
+
+  /* 当 BackToTop 按钮存在时，调整 AI 按钮位置以避免重叠 */
+  :global(body:has([role="button"]:is([aria-label*="Back"]), [class*="back-to-top"], [class*="scroll-to-top"])) .coze-chat-button {
+    bottom: 24px;
+    right: 96px;
+  }
+
+  /* 备选方案：通过兄弟选择器检测 BackToTop 的存在 */
+  #coze-chat-widget:has(~ [class*="back-to-top"]) .coze-chat-button,
+  [class*="back-to-top"]:not(:hidden) ~ #coze-chat-widget .coze-chat-button {
+    right: 96px;
   }
 
   .coze-chat-button:hover {
@@ -214,8 +227,24 @@ const {
   .coze-chat-body {
     flex: 1;
     overflow: hidden;
-    overflow-y: auto;
-    padding: 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Coze SDK 容器 - iframe 需要明确的尺寸和无边距 */
+  #coze-embed-container {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  #coze-embed-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
   }
 
   /* 移动设备适配 */
@@ -225,6 +254,11 @@ const {
       right: 16px;
       width: 48px;
       height: 48px;
+    }
+
+    /* 移动端有 BackToTop 时的位置调整 */
+    :global(body:has([role="button"]:is([aria-label*="Back"]), [class*="back-to-top"], [class*="scroll-to-top"])) .coze-chat-button {
+      right: 72px;
     }
 
     .chat-icon {
@@ -266,68 +300,75 @@ const {
       this.backdrop = document.getElementById('coze-chat-backdrop');
       this.toggleBtn = document.getElementById('coze-chat-toggle');
       this.closeBtn = document.getElementById('coze-chat-close');
+      this.iframe = null;
       this.isOpen = false;
-      this.sdkLoaded = false;
-      this.sdkInitialized = false;
+      this.iframeReady = false;
+      
+      // 绑定方法以便能够移除监听器
+      this.handleToggle = () => this.toggle();
+      this.handleClose = () => this.close();
+      this.handleBackdropClick = () => this.close();
+      this.handleMessageEvent = (event) => this._handleMessage(event);
       
       this.init();
     }
 
     init() {
-      // 绑定事件监听
-      this.toggleBtn?.addEventListener('click', () => this.toggle());
-      this.closeBtn?.addEventListener('click', () => this.close());
-      this.backdrop?.addEventListener('click', () => this.close());
+      this.toggleBtn?.addEventListener('click', this.handleToggle);
+      this.closeBtn?.addEventListener('click', this.handleClose);
+      this.backdrop?.addEventListener('click', this.handleBackdropClick);
 
-      // 首次打开时加载 SDK
-      this.toggleBtn?.addEventListener('click', () => {
-        if (!this.sdkLoaded) {
-          this.loadSDK();
+      // 首次打开时创建 iframe
+      const createIframeOnce = () => {
+        if (!this.iframe) {
+          this.createIframe();
         }
-      }, { once: true });
+        // 移除一次性监听器
+        this.toggleBtn?.removeEventListener('click', createIframeOnce);
+      };
+      this.toggleBtn?.addEventListener('click', createIframeOnce, { once: true });
     }
 
     /**
-     * 从 CDN 加载 Coze WebSDK
+     * 清理资源（导航前调用）
      */
-    loadSDK() {
-      if (this.sdkLoaded) return;
-
-      // 加载 Coze WebSDK 脚本
-      const script = document.createElement('script');
-      script.src = 'https://lf-cdn.coze.cn/obj/unpkg/latest/coze/web-sdk/dist/js-umd/index.min.js';
-      script.async = true;
-
-      script.onload = () => {
-        this.sdkLoaded = true;
-        this.initializeCozeSDK();
-      };
-
-      script.onerror = () => {
-        console.error('Failed to load Coze WebSDK');
-        this.showError('无法加载 AI 助手，请稍后重试');
-      };
-
-      document.head.appendChild(script);
+    cleanup() {
+      // 移除所有事件监听器
+      this.toggleBtn?.removeEventListener('click', this.handleToggle);
+      this.closeBtn?.removeEventListener('click', this.handleClose);
+      this.backdrop?.removeEventListener('click', this.handleBackdropClick);
+      window.removeEventListener('message', this.handleMessageEvent);
+      
+      // 关闭模态框
+      this.close();
     }
 
     /**
-     * 初始化 Coze WebSDK
+     * 销毁实例（重新初始化前调用）
      */
-    initializeCozeSDK() {
-      if (typeof window.cozeWebSDK === 'undefined') {
-        this.showError('AI 助手初始化失败');
-        return;
+    destroy() {
+      this.cleanup();
+      
+      // 清除 iframe
+      if (this.iframe) {
+        this.iframe.remove();
+        this.iframe = null;
       }
-
-      this.setupCozeChat();
+      
+      // 清除容器内容
+      if (this.container) {
+        this.container.innerHTML = '';
+      }
+      
+      this.iframeReady = false;
+      this.isOpen = false;
     }
 
     /**
-     * 配置并初始化聊天
+     * 创建并初始化 iframe
      */
-    setupCozeChat() {
-      if (!window.cozeWebSDK || !this.container || this.sdkInitialized) return;
+    createIframe() {
+      if (this.iframe) return;
 
       if (!this.projectId) {
         this.showError('缺少 Coze Project ID 配置');
@@ -335,32 +376,114 @@ const {
       }
 
       try {
-        this.sdkInitialized = true;
+        // 创建 iframe 元素
+        this.iframe = document.createElement('iframe');
+        this.iframe.src = 'https://sdk.coze.site';
+        this.iframe.style.width = '100%';
+        this.iframe.style.height = '100%';
+        this.iframe.style.border = 'none';
+        this.iframe.style.display = 'block';
 
-        const cozeConfig = {
-          projectId: this.projectId,
-          container: this.container,
-          theme: this.isDarkMode() ? 'dark' : 'light',
-          refreshToken: async () => {
-            const response = await fetch('/api/coze/token', {
-              credentials: 'same-origin'
-            });
+        // 监听来自 iframe 的消息
+        window.addEventListener('message', this.handleMessageEvent);
 
-            if (!response.ok) {
-              throw new Error('Failed to fetch Coze token');
-            }
+        // 添加到容器
+        this.container?.appendChild(this.iframe);
 
-            const data = await response.json();
-            return data.token;
-          },
-          unauthorizedDescription: 'AI 助手未授权，请检查配置'
-        };
-
-        window.cozeWebSDK.init(cozeConfig);
+        // 等待 iframe 准备就绪
+        setTimeout(() => {
+          if (!this.iframeReady) {
+            this.showError('iframe 加载超时，请检查网络连接');
+          }
+        }, 5000);
       } catch (error) {
-        this.sdkInitialized = false;
-        console.error('Failed to initialize Coze chat:', error);
+        console.error('Failed to create iframe:', error);
         this.showError('AI 助手初始化出错');
+      }
+    }
+
+    /**
+     * 处理来自 iframe 的消息
+     */
+    _handleMessage(event) {
+      // 只处理来自 Coze SDK 的消息
+      if (event.origin !== 'https://sdk.coze.site') {
+        return;
+      }
+
+      const data = event.data;
+      
+      if (data.type === 'IFRAME_READY') {
+        this.iframeReady = true;
+        this.initializeIframe();
+      } else if (data.type === 'TOKEN_EXPIRED') {
+        // Token 过期，需要刷新
+        this.refreshTokenAndNotify();
+      } else if (data.type === 'TOKEN_INVALID') {
+        this.showError('Token 校验失败，请检查配置');
+      } else if (data.type === 'NETWORK_ERROR') {
+        this.showError('网络错误，请检查连接');
+      }
+    }
+
+    /**
+     * 初始化 iframe（发送初始化命令）
+     */
+    async initializeIframe() {
+      try {
+        // 获取 token
+        const token = await this.getToken();
+        
+        if (!token) {
+          this.showError('无法获取访问令牌');
+          return;
+        }
+
+        // 发送初始化命令
+        this.iframe?.contentWindow?.postMessage({
+          type: 'INIT',
+          payload: {
+            projectId: this.projectId,
+            token: token
+          }
+        }, 'https://sdk.coze.site');
+      } catch (error) {
+        console.error('Failed to initialize iframe:', error);
+        this.showError('AI 助手初始化出错');
+      }
+    }
+
+    /**
+     * 获取 token
+     */
+    async getToken() {
+      try {
+        const response = await fetch('/api/coze/token', {
+          credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch token');
+        }
+
+        const data = await response.json();
+        return data.token;
+      } catch (error) {
+        console.error('Failed to get token:', error);
+        return null;
+      }
+    }
+
+    /**
+     * 刷新 token 并通知 iframe
+     */
+    async refreshTokenAndNotify() {
+      const token = await this.getToken();
+      if (token) {
+        this.iframe?.contentWindow?.postMessage({
+          type: 'UPDATE_TOKEN',
+          payload: { token }
+        }, 'https://sdk.coze.site');
       }
     }
 
@@ -374,8 +497,6 @@ const {
       this.modal?.classList.remove('hidden');
       this.modal?.classList.add('show');
       this.backdrop?.classList.remove('hidden');
-      
-      // 阻止背景滚动
       document.body.style.overflow = 'hidden';
     }
 
@@ -388,24 +509,14 @@ const {
       this.isOpen = false;
       this.modal?.classList.add('hidden');
       this.backdrop?.classList.add('hidden');
-      
-      // 恢复背景滚动
       document.body.style.overflow = '';
     }
 
     /**
-     * 切换聊天窗口状态
+     * 切换聊天窗口
      */
     toggle() {
       this.isOpen ? this.close() : this.open();
-    }
-
-    /**
-     * 检查是否为深色模式
-     */
-    isDarkMode() {
-      return document.documentElement.classList.contains('dark') ||
-             window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
 
     /**
@@ -422,24 +533,47 @@ const {
           text-align: center;
           padding: 20px;
           color: hsl(var(--foreground) / 0.6);
+          font-size: 14px;
         ">
           <div>
-            <p style="margin: 0; font-size: 14px;">${message}</p>
-            <p style="margin: 10px 0 0 0; font-size: 12px; opacity: 0.7;">
-              请检查 BOT_ID 配置或网络连接
-            </p>
+            <p style="margin: 0;">⚠️ ${message}</p>
           </div>
         </div>
       `;
     }
   }
 
-  // 页面加载完成后初始化
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      new CozeChatWidget();
-    });
-  } else {
-    new CozeChatWidget();
+  // 全局实例引用
+  let chatWidget = null;
+
+  /**
+   * 初始化聊天小部件
+   */
+  function initializeChatWidget() {
+    // 清理旧实例（防止重复初始化）
+    if (chatWidget) {
+      chatWidget.destroy?.();
+    }
+    chatWidget = new CozeChatWidget();
   }
+
+  // 初始页面加载
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeChatWidget);
+  } else {
+    initializeChatWidget();
+  }
+
+  // 支持 Astro View Transitions（处理 SPA 导航）
+  document.addEventListener('astro:after-swap', () => {
+    // 重新初始化聊天小部件以获取新的 DOM 元素
+    initializeChatWidget();
+  });
+
+  // 导航前清理（可选但推荐）
+  document.addEventListener('astro:before-swap', () => {
+    if (chatWidget?.cleanup) {
+      chatWidget.cleanup();
+    }
+  });
 </script>

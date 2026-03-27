@@ -1,6 +1,8 @@
 const getServerEnv = (key: 'COZE_PAT' | 'MY_BLOG_DOMAIN') =>
   import.meta.env[key] || process.env[key];
 
+export const prerender = false;
+
 export async function GET({ request }: { request: Request }) {
   const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
   const myDomain = getServerEnv('MY_BLOG_DOMAIN');
