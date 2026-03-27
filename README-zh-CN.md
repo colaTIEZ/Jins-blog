@@ -80,6 +80,30 @@ bun preview
 bun pure new
 ```
 
+## Cloudflare 安全部署（Coze Agent）
+
+
+本地开发建议：
+
+```shell
+# 1) 复制公开变量模板
+cp .env.example .env
+
+# 2) 复制服务端密钥模板
+cp .dev/.vars.example .dev/.vars
+```
+
+Cloudflare Pages（Production / Preview）中配置以下变量：
+
+- `PUBLIC_COZE_PROJECT_ID`：Coze Project ID（公开变量）
+- `COZE_PAT`：Coze PAT（Secret）
+- `MY_BLOG_DOMAIN`：你的域名白名单，可选，支持逗号分隔多个域名
+
+注意事项：
+
+- 不要把 `COZE_PAT` 写成 `PUBLIC_` 前缀变量。
+- `/api/coze/token` 已启用域名白名单校验和 `no-store` 响应头，降低滥用风险。
+
 ## 贡献
 
 为了花更多时间编写代码，减少在空白上纠结的时间，本项目使用代码约定和样式来鼓励一致性。风格一致的代码更容易（且更不容易出错）进行审查、维护和理解。
