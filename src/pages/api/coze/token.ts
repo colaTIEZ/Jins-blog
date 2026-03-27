@@ -1,25 +1,25 @@
-const getServerEnv = (key: 'COZE_PAT' | 'MY_BLOG_DOMAIN') =>
-  import.meta.env[key] || process.env[key];
+// src/pages/api/coze/token.ts
+import type { APIRoute } from 'astro';
 
 export const prerender = false;
 
-export async function GET({ request }: { request: Request }) {
+export const GET: APIRoute = async ({ request, locals }) => {
+  // 现在的 locals.runtime.env 已经有了基本的类型提示
+  const env = (locals as any).runtime?.env || {}; 
+  
+  const token = env.COZE_PAT;
+  const myDomain = env.MY_BLOG_DOMAIN;
+
   const origin = request.headers.get('Origin') || request.headers.get('Referer') || '';
-  const myDomain = getServerEnv('MY_BLOG_DOMAIN');
+  const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
 
-  const isLocalOrigin =
-    origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('[::1]');
-  const hasRealDomain = myDomain && !myDomain.includes('yourdomain.com');
-
-  if (hasRealDomain && origin && !isLocalOrigin && !origin.includes(myDomain)) {
-    return new Response('Forbidden: Unauthorized origin', { status: 403 });
+  if (myDomain && origin && !isLocal && !origin.includes(myDomain)) {
+    return new Response('Forbidden', { status: 403 });
   }
 
-  const token = getServerEnv('COZE_PAT');
-
   if (!token) {
-    return Response.json({ error: 'Missing COZE_PAT' }, { status: 500 });
+    return Response.json({ error: 'Missing environment variables' }, { status: 500 });
   }
 
   return Response.json({ token });
-}
+};
