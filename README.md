@@ -12,6 +12,19 @@
 - [x] :framed_picture: Dynamic open graph generation for posts
 - [x] :framed_picture: Mediumzoom lightbox for images
 
+## Useful Command
+```
+# Install dependencies
+bun install
+# Start the dev server
+bun dev
+# Build the project
+bun run build
+# Preview (after the build)
+bun preview
+# Create a new post
+bun pure new
+```
 
 ## Thanks
 
